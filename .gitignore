@@ -1,8 +1,13 @@
-# Ignore Gradle project-specific cache directory
-.gradle
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-# Ignore Gradle build output directory
-build
+# Local config / secrets
+local.properties
+gradle-app.setting
 
 # Ignore Kotlin plugin data
 .kotlin
@@ -12,3 +17,8 @@ build
 
 .idea
 .vscode
+.classpath
+.project
+.settings
+bin/
+*.iml
