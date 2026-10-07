@@ -2,101 +2,103 @@ package com.genesis.application.controller;
 
 import com.genesis.application.db.Database;
 import com.genesis.application.model.User;
+import com.genesis.framework.annotations.DELETE;
+import com.genesis.framework.annotations.GET;
+import com.genesis.framework.annotations.POST;
+import com.genesis.framework.annotations.RestController;
 import com.genesis.framework.http.Request;
 import com.genesis.framework.http.Response;
 
 import java.util.List;
 
+@RestController
 public class UserController {
-    public void listUsers(Request req, Response res){
+    @GET("/api/users")
+    public String listUsers(){
         List<User> users = Database.findAll();
-
         StringBuilder json = new StringBuilder("[");
-        for (int i = 0; i < users.size(); i++){
-            User u = users.get(i);
-            json.append(String.format("{\"id\":%d, \"name\":\"%s\", \"email\":\"%s\"}",
-                   u.getId(), u.getName(), u.getEmail()
-            ));
-            if( i < users.size() - 1) json.append(",");
+        for(int i = 0; i < users.size(); i++){
+           User u = users.get(i);
+           json.append("{")
+                   .append("\"id\":").append(u.getId()).append(",")
+                   .append("\"name\":\"").append(u.getName()).append("\",")
+                   .append("\"email\":\"").append(u.getEmail()).append("\"")
+                   .append("}");
+           if(i < users.size() - 1){
+               json.append(",");
+           }
         }
         json.append("]");
-        res.setBody(json.toString());
-        res.setStatusCode(200);
-        res.setContentType("application/json");
+        return json.toString();
     }
 
-    public void getUser(Request req, Response res){
+    @GET("/api/users/details")
+    public String getUser(Request req, Response res){
         String idParam = req.getParam("id");
         if(idParam == null){
             res.setStatusCode(404);
-            res.setBody("{\"error\": \"ID Required\"}");
-            return;
+            return "{\"error\": \"ID Required\"}";
         }
         try{
             int id = Integer.parseInt(idParam);
             User user = Database.findById(id);
             if(user == null){
                 res.setStatusCode(404);
-                res.setBody("{\"error\": \"User not Found\"}");
-                return;
+                return "{\"error\": \"User not Found\"}";
             }
-            String json = String.format("{\"id\": \"%d\", \"name\": \"%s\", \"email\": \"%s\"}",
+            return String.format(
+                    "{\"id\": \"%d\", \"name\": \"%s\", \"email\": \"%s\"}",
                     user.getId(), user.getName(), user.getEmail()
                     );
-            res.setStatusCode(200);
-            res.setBody(json);
-            res.setContentType("application/json");
         }catch (NumberFormatException e){
             res.setStatusCode(400);
-            res.setBody("{\"error\": \"ID must be a number\"}");
+            return "{\"error\": \"ID must be a number\"}";
         }
     }
-
-    public void createUser(Request req, Response res){
+    @POST("/api/users")
+    public String createUser(Request req, Response res){
         String body = req.getBody();
         try{
-           String name = extractJsonValue(body, "name");
-           String email = extractJsonValue(body, "email");
-           if(name == null||name.length() < 3){
-               res.setStatusCode(400);
-               res.setBody("{\"error\": \"Invalid name or too short\"}");
-               return;
-           }
-           User user = new User(0, name, email);
-           User saved = Database.save(user);
-            String json = String.format("{\"id\": \"%d\", \"name\": \"%s\", \"email\": \"%s\"}",
+            String name = extractJsonValue(body, "name");
+            String email = extractJsonValue(body, "email");
+            if(name == null||name.length() < 3){
+                res.setStatusCode(400);
+                return "{\"error\": \"Invalid name or too short\"}";
+            }
+            User user = new User(0, name, email);
+            User saved = Database.save(user);
+            res.setStatusCode(201);
+
+            return String.format(
+                    "{\"id\": \"%d\", \"name\": \"%s\", \"email\": \"%s\"}",
                     saved.getId(), saved.getName(), saved.getEmail()
             );
-            res.setStatusCode(201);
-            res.setBody(json);
-            res.setContentType("application/json");
         }catch(Exception e){
             res.setStatusCode(500);
-            res.setBody("{\"error\": \"Failed to parse JSON\"}");
-            System.out.println("[ERROR] Error message: "+e.getMessage());
+            return "{\"error\": \"Failed to parse JSON\"}";
         }
     }
 
-    public void deleteUser(Request req, Response res){
+    @DELETE("/api/users")
+    public String deleteUser(Request req, Response res){
         String idParam = req.getParam("id");
         if(idParam == null){
             res.setStatusCode(404);
-            res.setBody("{\"error\": \"ID Required\"}");
-            return;
+            return "{\"error\": \"ID Required\"}";
         }
         try{
             int id = Integer.parseInt(idParam);
             boolean deleted = Database.delete(id);
-            if(!deleted){
+            if(deleted){
+                res.setStatusCode(204);
+                return "";
+            } else{
                 res.setStatusCode(404);
-                res.setBody("{\"error\": \"User not Found\"}");
-                return;
+                return "{\"error\": \"User not Found\"}";
             }
-            res.setStatusCode(200);
-            res.setContentType("application/json");
         }catch (NumberFormatException e){
             res.setStatusCode(400);
-            res.setBody("{\"error\": \"ID must be a number\"}");
+            return "{\"error\": \"ID must be a number\"}";
         }
     }
     private String extractJsonValue(String body, String key){

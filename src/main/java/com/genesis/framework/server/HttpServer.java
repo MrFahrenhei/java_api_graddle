@@ -6,28 +6,16 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.genesis.framework.http.HttpHandler;
 import com.genesis.framework.http.Router;
+import com.genesis.framework.service.RouteScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HttpServer{
     private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
     private final Router router = new Router();
-    public void addRoute(String method, String path, HttpHandler handler){
-        router.register(method, path, handler);
-    }
-    public void get(String path, HttpHandler handler){
-        addRoute("GET", path, handler);
-    }
-    public void post(String path, HttpHandler handler){
-        addRoute("POST", path, handler);
-    }
-    public void delete(String path, HttpHandler handler){
-        addRoute("DELETE", path, handler);
-    }
-    public void put(String path, HttpHandler handler){
-        addRoute("PUT", path, handler);
+    public void registerController(Object controller){
+        RouteScanner.scan(controller, router);
     }
     public void start(int port){
 
