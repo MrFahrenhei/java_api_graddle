@@ -2,6 +2,7 @@ package com.genesis.framework.service;
 
 import com.genesis.framework.annotations.*;
 import com.genesis.framework.http.Router;
+import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +10,7 @@ import java.lang.reflect.Method;
 
 public class RouteScanner {
     private static final Logger logger = LoggerFactory.getLogger(RouteScanner.class);
+    private static final Gson gson = new Gson();
 
     public static void scan(Object controller, Router router){
         Class<?> clazz = controller.getClass();
@@ -35,10 +37,11 @@ public class RouteScanner {
                 }else{
                     result = method.invoke(controller, req, res);
                 }
-                if(result != null){
-                    String responseBody = result.toString();
 
-                    res.setBody(responseBody);
+                if(isJson && result != null){
+                    String json = gson.toJson(result);
+
+                    res.setBody(json);
                     res.setContentType("application/json");
 
                     if(res.getStatusCode()==0){
